@@ -7,7 +7,6 @@ import {
   createSceneContext,
   disposeEngine,
   disposeScene,
-  loadEnvironment,
   loadGltf,
   registerScene,
   startEngine,
@@ -17,8 +16,9 @@ import {
   type EngineContext,
   type SceneContext,
 } from "@babylonjs/lite";
-import { WEBGPU_REQUIRED_MESSAGE } from "./defaults.js";
+import { DEFAULT_CLEAR_COLOR, WEBGPU_REQUIRED_MESSAGE } from "./defaults.js";
 import type {
+  LiteViewerClearColor,
   LiteViewerDetails,
   LiteViewerOptions,
   LiteViewerSource,
@@ -70,11 +70,12 @@ export class LiteViewer {
     try {
       this.assertWebGPUSupported();
 
-      const engine = await createEngine(this.canvas);
+      const engine = await this.createEngine();
       const scene = createSceneContext(engine);
 
       this.engine = engine;
       this.scene = scene;
+      this.applyClearColor(scene);
 
       this.addDefaultLight(scene);
 
@@ -82,10 +83,6 @@ export class LiteViewer {
 
       if (this.options.source) {
         await this.loadModel(this.options.source);
-      }
-
-      if (this.options.environment) {
-        await this.setEnvironment(this.options.environment);
       }
 
       if (!this.camera) {
@@ -152,28 +149,23 @@ export class LiteViewer {
   }
 
   /**
-   * Loads an environment texture into the active scene.
-   *
-   * The viewer uses a packaged BRDF LUT texture required by Babylon Lite's
-   * environment loader.
-   *
-   * @param source - Environment texture URL.
+   * Returns the current viewer lifecycle state.
    */
-  async setEnvironment(source: string): Promise<void> {
-    const scene = this.requireScene();
+  getState(): ViewerState {
+    return this.state;
+  }
 
-    try {
-      const environmentUrl = resolveAssetUrl(source);
-      const { DEFAULT_BRDF_LUT_URL } = await import("./brdfLut.js");
-      await loadEnvironment(scene, environmentUrl, {
-        brdfUrl: DEFAULT_BRDF_LUT_URL,
-        skipSkybox: this.options.skipSkybox,
-        skipGround: this.options.skipGround ?? true,
-      });
-    } catch (error) {
-      this.state = "error";
-      this.options.onError?.(error);
-      throw error;
+  /**
+   * Updates the scene clear color.
+   *
+   * The value is also used for future replacement scenes created by
+   * {@link loadModel}.
+   */
+  setClearColor(color: LiteViewerClearColor): void {
+    this.options.clearColor = color;
+
+    if (this.scene) {
+      this.scene.clearColor = color;
     }
   }
 
@@ -228,6 +220,16 @@ export class LiteViewer {
     }
   }
 
+  private createEngine(): Promise<EngineContext> {
+    if (!this.options.alphaMode) {
+      return createEngine(this.canvas);
+    }
+
+    return createEngine(this.canvas, {
+      alphaMode: this.options.alphaMode,
+    });
+  }
+
   private createDetails(): LiteViewerDetails {
     if (!this.engine || !this.scene || !this.camera) {
       throw new Error("LiteViewer is not initialized.");
@@ -260,15 +262,21 @@ export class LiteViewer {
 
   private createScene(): SceneContext {
     const scene = createSceneContext(this.requireEngine());
+    this.applyClearColor(scene);
     this.addDefaultLight(scene);
     this.scene = scene;
     return scene;
   }
 
-  private addDefaultLight(scene: SceneContext): void {
-    if (this.options.light === false) return;
+  private applyClearColor(scene: SceneContext): void {
+    scene.clearColor = this.options.clearColor ?? DEFAULT_CLEAR_COLOR;
+  }
 
-    addToScene(scene, createHemisphericLight([0, 1, 0], 1));
+  private addDefaultLight(scene: SceneContext): void {
+    addToScene(
+      scene,
+      createHemisphericLight([0, 1, 0], this.options.lightIntensity ?? 1),
+    );
   }
 
   private createCameraForScene(scene: SceneContext): void {
@@ -304,21 +312,14 @@ type NavigatorWithGpu = Navigator & {
   gpu?: unknown;
 };
 
-function resolveAssetUrl(source: string): string {
-  if (typeof document === "undefined") {
-    return source;
-  }
-
-  return new URL(source, document.baseURI).href;
-}
-
 function loadModelSource(
   engine: EngineContext,
   source: LiteViewerSource,
 ): Promise<AssetContainer> {
-  if (typeof source === "string") {
-    return loadGltf(engine, resolveAssetUrl(source));
-  }
-
-  return loadGltf(engine, source);
+  return loadLiteViewerSource(engine, source);
 }
+
+const loadLiteViewerSource = loadGltf as (
+  engine: EngineContext,
+  source: LiteViewerSource,
+) => Promise<AssetContainer>;
