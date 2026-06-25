@@ -36,7 +36,6 @@ export class LiteViewer {
   private engine?: EngineContext;
   private scene?: SceneContext;
   private camera?: ArcRotateCamera;
-  private loadedModel?: AssetContainer;
   private state: ViewerState = "idle";
   private running = false;
   private detachCameraControl?: () => void;
@@ -121,18 +120,17 @@ export class LiteViewer {
     this.state = "loading";
 
     try {
-      if (this.loadedModel || this.sceneRegistered) {
+      if (this.sceneRegistered) {
         this.disposeCurrentScene();
         this.createScene();
       }
 
       const scene = this.requireScene();
 
-      const model = await loadModelSource(this.requireEngine(), source);
+      const model = await loadLiteViewerSource(this.requireEngine(), source);
       addToScene(scene, model);
 
-      this.loadedModel = model;
-      this.frameModel();
+      this.createCameraForScene(scene);
 
       if (!this.sceneRegistered && this.engine) {
         await registerScene(scene);
@@ -287,12 +285,6 @@ export class LiteViewer {
     this.detachCameraControl = attachControl(camera, this.canvas, scene);
   }
 
-  private frameModel(): void {
-    if (!this.scene || !this.loadedModel) return;
-
-    this.createCameraForScene(this.scene);
-  }
-
   private disposeCurrentScene(): void {
     this.detachCameraControl?.();
     this.detachCameraControl = undefined;
@@ -304,20 +296,12 @@ export class LiteViewer {
     this.scene = undefined;
     this.camera = undefined;
     this.sceneRegistered = false;
-    this.loadedModel = undefined;
   }
 }
 
 type NavigatorWithGpu = Navigator & {
   gpu?: unknown;
 };
-
-function loadModelSource(
-  engine: EngineContext,
-  source: LiteViewerSource,
-): Promise<AssetContainer> {
-  return loadLiteViewerSource(engine, source);
-}
 
 const loadLiteViewerSource = loadGltf as (
   engine: EngineContext,

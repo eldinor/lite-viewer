@@ -118,4 +118,11 @@ export type LiteViewerDetails = {
  * This type is exported for diagnostics and advanced integrations, but ordinary
  * applications usually do not need it.
  */
-export type ViewerState = "idle" | "initializing" | "ready" | "loading" | "loaded" | "error" | "disposed";
+export type ViewerState =
+  | "idle"
+  | "initializing"
+  | "ready"
+  | "loading"
+  | "loaded"
+  | "error"
+  | "disposed";
