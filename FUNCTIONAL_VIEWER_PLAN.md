@@ -21,7 +21,7 @@ Additional capabilities should be exported as separate feature functions. Users 
 Use a minimal factory:
 
 ```ts
-import { createBareLiteViewer } from "@litools/babylon-lite-viewer";
+import { createBareLiteViewer } from "@litools/babylonpress-lite-viewer";
 
 const viewer = await createBareLiteViewer(canvas);
 
@@ -36,7 +36,7 @@ import {
   captureScreenshot,
   createBareLiteViewer,
   setClearColor,
-} from "@litools/babylon-lite-viewer";
+} from "@litools/babylonpress-lite-viewer";
 
 const viewer = await createBareLiteViewer(canvas, "/models/chair.glb");
 
@@ -393,7 +393,7 @@ Example:
 import {
   captureScreenshot,
   createBareLiteViewer,
-} from "@litools/babylon-lite-viewer";
+} from "@litools/babylonpress-lite-viewer";
 
 const viewer = await createBareLiteViewer(canvas, "/models/chair.glb");
 const shot = await captureScreenshot(viewer);
@@ -429,4 +429,3 @@ So a persistent-scene approach is technically possible.
 We are not using it for the first functional viewer because `addToScene(scene, container)` can register scene-level animation callbacks that do not have an obvious public cleanup function. Disposing the whole scene is more conservative and matches the current class.
 
 Revisit persistent scenes only if scene replacement becomes a measured bottleneck or Babylon Lite exposes a full asset-container disposer.
-
