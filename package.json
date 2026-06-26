@@ -2,7 +2,7 @@
   "name": "@litools/babylonpress-lite-viewer",
   "version": "0.1.0",
   "description": "Opinionated canvas-based Babylon Lite WebGPU model viewer.",
-  "homepage": "https://babylonpress.org/",
+  "homepage": "https://v1.babylonpress.org/",
   "author": {
     "name": "BabylonPress",
     "url": "https://babylonpress.org/"

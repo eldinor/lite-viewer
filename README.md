@@ -1,12 +1,18 @@
 # @litools/babylonpress-lite-viewer
 
-Opinionated canvas-based model viewer from [BabylonPress](https://babylonpress.org/), built with [`@babylonjs/lite`](https://www.npmjs.com/package/@babylonjs/lite).
+Opinionated canvas-based model viewer from [BabylonPress](https://v1.babylonpress.org/), built with [`@babylonjs/lite`](https://www.npmjs.com/package/@babylonjs/lite).
 
 The viewer creates a WebGPU Babylon Lite scene, loads one glTF/GLB model at a time, frames it with Babylon Lite's default camera helper, and exposes a small TypeScript API for embedding the viewer in an application.
 
+It uses a class-based API similar to traditional Babylon Viewer integrations, while keeping the implementation focused on Babylon Lite and a single canvas.
+
+It supports remote model URLs, local `Blob` and `ArrayBuffer` sources, clear-color control, optional transparent canvas compositing, animation group playback controls, screenshot capture, and lifecycle callbacks. The feature set is intentionally minimal, but it can suit a broad range of 3D applications. The Viewer doesn't need anything except canvas and GLB/GLTF model. And WebGPU support, of course.
+
+More capabilities are planned for a future pure functional viewer and composable helper functions that can be imported on demand.
+
 ## Project
 
-- Homepage: [babylonpress.org](https://babylonpress.org/)
+- Homepage: [v1.babylonpress.org](https://v1.babylonpress.org/)
 - Repository: [eldinor/babylonpress-lite-viewer](https://github.com/eldinor/babylonpress-lite-viewer)
 - Issues: [GitHub issues](https://github.com/eldinor/babylonpress-lite-viewer/issues)
 
