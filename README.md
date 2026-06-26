@@ -1,8 +1,14 @@
-# @litools/babylon-lite-viewer
+# @litools/babylonpress-lite-viewer
 
-Minimal canvas-based model viewer built with [`@babylonjs/lite`](https://www.npmjs.com/package/@babylonjs/lite).
+Opinionated canvas-based model viewer from [BabylonPress](https://babylonpress.org/), built with [`@babylonjs/lite`](https://www.npmjs.com/package/@babylonjs/lite).
 
 The viewer creates a WebGPU Babylon Lite scene, loads one glTF/GLB model at a time, frames it with Babylon Lite's default camera helper, and exposes a small TypeScript API for embedding the viewer in an application.
+
+## Project
+
+- Homepage: [babylonpress.org](https://babylonpress.org/)
+- Repository: [eldinor/babylonpress-lite-viewer](https://github.com/eldinor/babylonpress-lite-viewer)
+- Issues: [GitHub issues](https://github.com/eldinor/babylonpress-lite-viewer/issues)
 
 ## Features
 
@@ -30,7 +36,7 @@ The canvas should have an explicit size through CSS or layout:
 ## Installation
 
 ```sh
-npm install @litools/babylon-lite-viewer
+npm install @litools/babylonpress-lite-viewer
 ```
 
 ## Basic Usage
@@ -40,7 +46,7 @@ npm install @litools/babylon-lite-viewer
 ```
 
 ```ts
-import { createLiteViewerForCanvas } from "@litools/babylon-lite-viewer";
+import { createLiteViewerForCanvas } from "@litools/babylonpress-lite-viewer";
 
 const canvas = document.querySelector("#viewer") as HTMLCanvasElement;
 
@@ -85,7 +91,7 @@ fileInput.addEventListener("change", async () => {
 Use `LiteViewer` directly when you want to control construction and initialization separately.
 
 ```ts
-import { LiteViewer } from "@litools/babylon-lite-viewer";
+import { LiteViewer } from "@litools/babylonpress-lite-viewer";
 
 const viewer = new LiteViewer(canvas, {
   autoStart: false,

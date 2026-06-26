@@ -1,7 +1,28 @@
 {
-  "name": "@litools/babylon-lite-viewer",
+  "name": "@litools/babylonpress-lite-viewer",
   "version": "0.1.0",
-  "description": "Minimal canvas-based Babylon WebGPU model viewer.",
+  "description": "Opinionated canvas-based Babylon Lite WebGPU model viewer.",
+  "homepage": "https://babylonpress.org/",
+  "author": {
+    "name": "BabylonPress",
+    "url": "https://babylonpress.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eldinor/babylonpress-lite-viewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eldinor/babylonpress-lite-viewer/issues"
+  },
+  "keywords": [
+    "babylonpress",
+    "babylon-lite",
+    "babylonjs",
+    "webgpu",
+    "gltf",
+    "glb",
+    "model-viewer"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

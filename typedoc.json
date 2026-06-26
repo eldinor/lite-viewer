@@ -1,7 +1,7 @@
 {
   "entryPoints": ["src/index.ts"],
   "out": "docs/api",
-  "name": "Babylon Lite Viewer",
+  "name": "BabylonPress Lite Viewer",
   "includeVersion": true,
   "entryPointStrategy": "resolve",
   "excludePrivate": true,
