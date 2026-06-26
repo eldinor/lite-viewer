@@ -38,7 +38,7 @@ body {
   gap: 18px;
   padding: 20px;
   border-right: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(23, 23, 23, 0.86);
+  background: rgba(7, 13, 31, 0.92);
   backdrop-filter: blur(12px);
 }
 
@@ -98,7 +98,34 @@ select {
 
 input[type="color"] {
   width: 100%;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: #20242c;
   padding: 2px;
+  cursor: pointer;
+}
+
+input[type="color"]:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: #2b313b;
+}
+
+input[type="color"]:focus-visible {
+  outline: 2px solid rgba(148, 163, 184, 0.8);
+  outline-offset: 2px;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 3px;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: 4px;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: 0;
+  border-radius: 4px;
 }
 
 input[type="range"] {
@@ -106,8 +133,21 @@ input[type="range"] {
 }
 
 button {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: #20242c;
+  color: #f8fafc;
   padding: 0 12px;
   cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: #2b313b;
+}
+
+button:focus-visible {
+  outline: 2px solid rgba(148, 163, 184, 0.8);
+  outline-offset: 2px;
 }
 
 button:disabled,
@@ -118,7 +158,20 @@ select:disabled {
 
 select {
   width: 100%;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: #20242c;
+  color: #f8fafc;
   padding: 0 8px;
+}
+
+select:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: #2b313b;
+}
+
+select:focus-visible {
+  outline: 2px solid rgba(148, 163, 184, 0.8);
+  outline-offset: 2px;
 }
 
 .screenshot-preview {
@@ -157,6 +210,20 @@ select {
   color: rgba(255, 255, 255, 0.62);
   font-size: 12px;
   line-height: 1.35;
+}
+
+.repo-link {
+  margin-top: auto;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 13px;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.repo-link:hover,
+.repo-link:focus-visible {
+  color: #ffffff;
+  text-decoration: underline;
 }
 
 @media (max-width: 720px) {

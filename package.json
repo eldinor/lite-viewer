@@ -49,7 +49,9 @@
     "test:package": "node ./scripts/test-package-consumption.mjs",
     "dev": "vite --host 0.0.0.0",
     "demo": "npm run demo:basic-canvas",
-    "demo:basic-canvas": "vite --host 0.0.0.0 --open /examples/basic-canvas/"
+    "demo:basic-canvas": "vite --host 0.0.0.0 --open /examples/basic-canvas/",
+    "build:demo": "npm run build:demo:basic-canvas",
+    "build:demo:basic-canvas": "vite build examples/basic-canvas --outDir ../../dist-demo/basic-canvas --emptyOutDir"
   },
   "dependencies": {
     "@babylonjs/lite": "1.4.0"

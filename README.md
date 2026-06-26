@@ -222,6 +222,12 @@ Build the package:
 npm run build
 ```
 
+Build the demo page:
+
+```sh
+npm run build:demo
+```
+
 Run tests:
 
 ```sh
