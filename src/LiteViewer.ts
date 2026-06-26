@@ -1,26 +1,32 @@
 import {
   addToScene,
   attachControl,
+  captureScreenshot,
   createDefaultCamera,
   createEngine,
   createHemisphericLight,
   createSceneContext,
   disposeEngine,
   disposeScene,
-  loadEnvironment,
   loadGltf,
+  pauseAnimation,
+  playAnimation as playBabylonAnimation,
   registerScene,
   startEngine,
   stopEngine,
+  stopAnimation,
   type ArcRotateCamera,
   type AssetContainer,
   type EngineContext,
   type SceneContext,
 } from "@babylonjs/lite";
-import { WEBGPU_REQUIRED_MESSAGE } from "./defaults.js";
+import { DEFAULT_CLEAR_COLOR, WEBGPU_REQUIRED_MESSAGE } from "./defaults.js";
 import type {
+  LiteViewerAnimationGroup,
+  LiteViewerClearColor,
   LiteViewerDetails,
   LiteViewerOptions,
+  LiteViewerScreenshot,
   LiteViewerSource,
   ViewerState,
 } from "./types.js";
@@ -31,12 +37,14 @@ import type {
  * The viewer owns a WebGPU engine, an active scene, and an ArcRotate camera. It
  * loads one model scene at a time: loading a new model disposes the previous
  * scene before creating the next one. Loaded models are framed automatically.
+ * No enviironment settings to keep everything minimal as possible.
+ * One default light with controlled intensity. ClearColor with alpha channel (use alphaMode: "premultiplied" for transparency).
  */
 export class LiteViewer {
   private engine?: EngineContext;
   private scene?: SceneContext;
   private camera?: ArcRotateCamera;
-  private loadedModel?: AssetContainer;
+  private animationGroups: LiteViewerAnimationGroup[] = [];
   private state: ViewerState = "idle";
   private running = false;
   private detachCameraControl?: () => void;
@@ -70,11 +78,12 @@ export class LiteViewer {
     try {
       this.assertWebGPUSupported();
 
-      const engine = await createEngine(this.canvas);
+      const engine = await this.createEngine();
       const scene = createSceneContext(engine);
 
       this.engine = engine;
       this.scene = scene;
+      this.applyClearColor(scene);
 
       this.addDefaultLight(scene);
 
@@ -82,10 +91,6 @@ export class LiteViewer {
 
       if (this.options.source) {
         await this.loadModel(this.options.source);
-      }
-
-      if (this.options.environment) {
-        await this.setEnvironment(this.options.environment);
       }
 
       if (!this.camera) {
@@ -124,18 +129,22 @@ export class LiteViewer {
     this.state = "loading";
 
     try {
-      if (this.loadedModel || this.sceneRegistered) {
+      if (this.sceneRegistered) {
         this.disposeCurrentScene();
         this.createScene();
       }
 
       const scene = this.requireScene();
 
-      const model = await loadModelSource(this.requireEngine(), source);
+      const model = await loadLiteViewerSource(this.requireEngine(), source);
       addToScene(scene, model);
 
-      this.loadedModel = model;
-      this.frameModel();
+      this.animationGroups = model.animationGroups ?? [];
+      if (this.options.autoPlayAnimations === false) {
+        this.stopAnimationGroups();
+      }
+
+      this.createCameraForScene(scene);
 
       if (!this.sceneRegistered && this.engine) {
         await registerScene(scene);
@@ -152,28 +161,78 @@ export class LiteViewer {
   }
 
   /**
-   * Loads an environment texture into the active scene.
-   *
-   * The viewer uses a packaged BRDF LUT texture required by Babylon Lite's
-   * environment loader.
-   *
-   * @param source - Environment texture URL.
+   * Returns the current viewer lifecycle state.
    */
-  async setEnvironment(source: string): Promise<void> {
-    const scene = this.requireScene();
+  getState(): ViewerState {
+    return this.state;
+  }
 
-    try {
-      const environmentUrl = resolveAssetUrl(source);
-      const { DEFAULT_BRDF_LUT_URL } = await import("./brdfLut.js");
-      await loadEnvironment(scene, environmentUrl, {
-        brdfUrl: DEFAULT_BRDF_LUT_URL,
-        skipSkybox: this.options.skipSkybox,
-        skipGround: this.options.skipGround ?? true,
-      });
-    } catch (error) {
-      this.state = "error";
-      this.options.onError?.(error);
-      throw error;
+  /**
+   * Returns animation groups loaded with the active model.
+   */
+  getAnimationGroups(): readonly LiteViewerAnimationGroup[] {
+    return this.animationGroups;
+  }
+
+  /**
+   * Stops other loaded animation groups and starts the group with `name`.
+   *
+   * @throws If no animation group with `name` exists on the active model.
+   */
+  playAnimationGroup(name: string): LiteViewerAnimationGroup {
+    const group = this.animationGroups.find(
+      (animation) => animation.name === name,
+    );
+    if (!group) {
+      throw new Error(`Animation group "${name}" was not found.`);
+    }
+
+    this.stopAnimationGroups(group);
+    playBabylonAnimation(group);
+    group.isPlaying = true;
+    syncAnimationControllerPlayback(group);
+    return group;
+  }
+
+  /**
+   * Pauses all animation groups loaded with the active model.
+   */
+  pauseAnimations(): void {
+    for (const group of this.animationGroups) {
+      pauseAnimation(group);
+      group.isPlaying = false;
+      pauseAnimationController(group);
+    }
+  }
+
+  /**
+   * Stops all animation groups loaded with the active model.
+   */
+  stopAnimations(): void {
+    this.stopAnimationGroups();
+  }
+
+  /**
+   * Captures the current viewer canvas.
+   *
+   * The screenshot data is opaque; Babylon Lite forces alpha to 255 when
+   * reading back the presented canvas.
+   */
+  captureScreenshot(): Promise<LiteViewerScreenshot> {
+    return captureScreenshot(this.requireEngine());
+  }
+
+  /**
+   * Updates the scene clear color.
+   *
+   * The value is also used for future replacement scenes created by
+   * {@link loadModel}.
+   */
+  setClearColor(color: LiteViewerClearColor): void {
+    this.options.clearColor = color;
+
+    if (this.scene) {
+      this.scene.clearColor = color;
     }
   }
 
@@ -228,6 +287,16 @@ export class LiteViewer {
     }
   }
 
+  private createEngine(): Promise<EngineContext> {
+    if (!this.options.alphaMode) {
+      return createEngine(this.canvas);
+    }
+
+    return createEngine(this.canvas, {
+      alphaMode: this.options.alphaMode,
+    });
+  }
+
   private createDetails(): LiteViewerDetails {
     if (!this.engine || !this.scene || !this.camera) {
       throw new Error("LiteViewer is not initialized.");
@@ -260,15 +329,18 @@ export class LiteViewer {
 
   private createScene(): SceneContext {
     const scene = createSceneContext(this.requireEngine());
+    this.applyClearColor(scene);
     this.addDefaultLight(scene);
     this.scene = scene;
     return scene;
   }
 
-  private addDefaultLight(scene: SceneContext): void {
-    if (this.options.light === false) return;
+  private applyClearColor(scene: SceneContext): void {
+    scene.clearColor = this.options.clearColor ?? DEFAULT_CLEAR_COLOR;
+  }
 
-    addToScene(scene, createHemisphericLight([0, 1, 0], 1));
+  private addDefaultLight(scene: SceneContext): void {
+    addToScene(scene, createHemisphericLight([0, 1, 0], this.options.lightIntensity ?? 1));
   }
 
   private createCameraForScene(scene: SceneContext): void {
@@ -277,12 +349,6 @@ export class LiteViewer {
     camera.alpha += Math.PI;
     this.camera = camera;
     this.detachCameraControl = attachControl(camera, this.canvas, scene);
-  }
-
-  private frameModel(): void {
-    if (!this.scene || !this.loadedModel) return;
-
-    this.createCameraForScene(this.scene);
   }
 
   private disposeCurrentScene(): void {
@@ -296,29 +362,46 @@ export class LiteViewer {
     this.scene = undefined;
     this.camera = undefined;
     this.sceneRegistered = false;
-    this.loadedModel = undefined;
+    this.animationGroups = [];
   }
+
+  private stopAnimationGroups(except?: LiteViewerAnimationGroup): void {
+    for (const group of this.animationGroups) {
+      if (group === except) continue;
+
+      stopAnimation(group);
+      group.isPlaying = false;
+      group.currentTime = 0;
+      syncAnimationControllerPlayback(group);
+    }
+  }
+}
+
+type AnimationGroupWithController = LiteViewerAnimationGroup & {
+  _ctrl?: {
+    playing?: boolean;
+    time?: number;
+  };
+};
+
+function pauseAnimationController(group: LiteViewerAnimationGroup): void {
+  const internalGroup = group as AnimationGroupWithController;
+  if (!internalGroup._ctrl) return;
+
+  group.currentTime = internalGroup._ctrl.time ?? group.currentTime;
+  internalGroup._ctrl.playing = group.isPlaying;
+}
+
+function syncAnimationControllerPlayback(group: LiteViewerAnimationGroup): void {
+  const internalGroup = group as AnimationGroupWithController;
+  if (!internalGroup._ctrl) return;
+
+  internalGroup._ctrl.playing = group.isPlaying;
+  internalGroup._ctrl.time = group.currentTime;
 }
 
 type NavigatorWithGpu = Navigator & {
   gpu?: unknown;
 };
 
-function resolveAssetUrl(source: string): string {
-  if (typeof document === "undefined") {
-    return source;
-  }
-
-  return new URL(source, document.baseURI).href;
-}
-
-function loadModelSource(
-  engine: EngineContext,
-  source: LiteViewerSource,
-): Promise<AssetContainer> {
-  if (typeof source === "string") {
-    return loadGltf(engine, resolveAssetUrl(source));
-  }
-
-  return loadGltf(engine, source);
-}
+const loadLiteViewerSource = loadGltf as (engine: EngineContext, source: LiteViewerSource) => Promise<AssetContainer>;

@@ -21,7 +21,6 @@
     "clean": "node ./scripts/clean-dist.mjs",
     "prebuild": "npm run clean",
     "build": "tsc -p tsconfig.json",
-    "postbuild": "node ./scripts/copy-assets.mjs",
     "prepack": "npm run build",
     "docs": "typedoc",
     "typedoc": "typedoc",
