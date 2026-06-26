@@ -1,7 +1,4 @@
-import {
-  createLiteViewerForCanvas,
-  type LiteViewerScreenshot,
-} from "../../src/index.js";
+import { createLiteViewerForCanvas, type LiteViewerScreenshot } from "../../src/index.js";
 
 const canvas = document.querySelector("#viewer") as HTMLCanvasElement;
 const loading = document.querySelector("#loading") as HTMLElement;
@@ -76,7 +73,7 @@ setLoading("Loading...");
 
 const details = await createLiteViewerForCanvas(canvas, {
   source: model.value,
-  clearColor: getClearColor(),
+  // clearColor: getClearColor(),
   alphaMode: "premultiplied",
   onLoaded: () => {
     loading.hidden = true;
